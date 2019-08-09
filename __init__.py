@@ -267,16 +267,19 @@ class SocketClient:
 			}
 
 		elif packet["type"] == "get_member_profiles":
-			async with self.session.get(f"http://discbotdb.000webhostapp.com/get?k={self.endpoint_key}&f=b_memberprofiles") as resp:
-				endpoint = json.loads(await resp.text())
+			try:
+				async with self.session.get(f"http://discbotdb.000webhostapp.com/get?k={self.endpoint_key}&f=b_memberprofiles") as resp:
+					endpoint = json.loads(await resp.text())
 
-				for key, value in endpoint.copy().items():
-					if len(value) == 0 or key == "545376143365373996": # did you know that D_shades has a Modulo profile? lol
-						del endpoint[key]
-						continue
+					for key, value in endpoint.copy().items():
+						if len(value) == 0 or key == "545376143365373996": # did you know that D_shades has a Modulo profile? lol
+							del endpoint[key]
+							continue
 
-					if isinstance(value, (list, tuple)):
-						endpoint[key] = {str(index + 1): subvalue for index, subvalue in enumerate(value)}
+						if isinstance(value, (list, tuple)):
+							endpoint[key] = {str(index + 1): subvalue for index, subvalue in enumerate(value)}
+			except asyncio.TimeoutError:
+				return {"error": "Endpoint timed out.", "success": False}
 
 			result = {"users": {}, "success": True}
 			guild = discord.get_guild(discord.fsol_guild)
