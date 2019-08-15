@@ -254,12 +254,15 @@ class SocketClient:
 		elif packet["type"] == "get_member_profiles_quantity":
 			quantity = 0
 
-			async with self.session.get(f"http://discbotdb.000webhostapp.com/get?k={self.endpoint_key}&f=b_memberprofiles") as resp:
-				endpoint = json.loads(await resp.text())
+			try:
+				async with self.session.get(f"http://discbotdb.000webhostapp.com/get?k={self.endpoint_key}&f=b_memberprofiles") as resp:
+					endpoint = json.loads(await resp.text())
 
-				for key, value in endpoint.copy().items():
-					if len(value) != 0 and key != "545376143365373996":
-						quantity += 1
+					for key, value in endpoint.copy().items():
+						if len(value) != 0 and key != "545376143365373996":
+							quantity += 1
+			except asyncio.TimeoutError:
+				return {"error": "Endpoint timed out.", "success": False}
 
 			return {
 				"quantity": quantity,
@@ -443,7 +446,7 @@ if __name__ == "__main__":
 	discord = DiscordClient(loop=asyncio.get_event_loop())
 
 	server = communication.Server(SocketClient, "0.0.0.0", 5654, loop=asyncio.new_event_loop())
-	timeout = aiohttp.ClientTimeout(total=1)
+	timeout = aiohttp.ClientTimeout(total=2)
 	SocketClient.session = aiohttp.ClientSession(timeout=timeout, loop=server.loop)
 	server.loop.create_task(server.start())
 
